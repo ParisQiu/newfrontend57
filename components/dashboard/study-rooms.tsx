@@ -1,8 +1,8 @@
 'use client';
 import Link from "next/link"
 import { Plus, Users } from "lucide-react"
-
-import { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from 'react';
+import StudyRoomsListClient from './StudyRoomsListClient';
 
 export default function StudyRooms() {
   const [studyRooms, setStudyRooms] = useState<{ id: string; name: string; room_id: number; subject: string; capacity: number; description: string; date: string; start_time: string; end_time: string; participants: number; location: string; host: string; mode: string }[]>([]);
@@ -74,52 +74,9 @@ export default function StudyRooms() {
         </Link>
       </div>
       <div className="p-4">
-        {loading ? (
-          <div className="text-center text-gray-500 py-8">Loading study rooms...</div>
-        ) : error ? (
-          <div className="text-center text-red-600 py-8">{error}</div>
-        ) : (
-          <>
-            <div className="space-y-3">
-              {studyRooms.slice(0, 3).map((room) => (
-                <div key={room.room_id} className="rounded-md border p-3 hover:bg-gray-50">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium">{room.name}</h3>
-                      <p className="text-sm text-gray-500">{room.subject}</p>
-                    </div>
-                    <Link
-                      href={`/dashboard/study-rooms/${room.room_id}`}
-                      className="rounded-md bg-blue-100 px-3 py-1 text-sm font-medium text-blue-600 hover:bg-blue-200"
-                    >
-                      Join
-                    </Link>
-                  </div>
-                  <div className="mt-2 flex items-center text-sm text-gray-500">
-                    <Users className="mr-1 h-4 w-4" />
-                    <span>
-                      {room.participants}/{room.capacity} participants
-                    </span>
-                  </div>
-                  <div className="mt-1 text-xs text-gray-600">
-                    <div><span className="font-medium">Date:</span> {room.date || 'N/A'}</div>
-                    <div><span className="font-medium">Time:</span> {room.start_time || 'N/A'} - {room.end_time || 'N/A'}</div>
-                    <div><span className="font-medium">Venue:</span> {room.location || 'N/A'}</div>
-                    <div><span className="font-medium">Mode:</span> {room.mode}</div>
-                  </div>
-                </div>
-              ))}
-              {studyRooms.length === 0 && (
-                <div className="text-center text-gray-500 py-8">No study rooms available.</div>
-              )}
-            </div>
-            <div className="mt-4 text-center">
-              <Link href="/dashboard/study-rooms" className="text-sm font-medium text-blue-600 hover:text-blue-500">
-                View all study rooms
-              </Link>
-            </div>
-          </>
-        )}
+        <Suspense fallback={<p>Loading study rooms list…</p>}>
+          <StudyRoomsListClient studyRooms={studyRooms} loading={loading} error={error} />
+        </Suspense>
       </div>
     </div>
   )

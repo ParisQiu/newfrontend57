@@ -249,7 +249,7 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
       const roomIdentifier = room.room_id || room.id
 
       const userHasJoined = joinedRoomsArr.some(
-        (jr) => jr.roomId.toString() === data.room_id.toString()
+        (jr) => jr.roomId.toString() === room.room_id.toString()
       );
 
       if (!userHasJoined) {

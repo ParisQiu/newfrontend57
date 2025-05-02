@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
+import React, { Suspense } from 'react';
 import DashboardLayout from "@/components/dashboard/dashboard-layout"
-import StudyRoomsList from "@/components/dashboard/study-rooms-list"
+import StudyRoomsListClient from "@/components/dashboard/StudyRoomsListClient"
 
 export const metadata: Metadata = {
   title: "Study Rooms | StudySmarter",
@@ -10,7 +11,9 @@ export const metadata: Metadata = {
 export default function StudyRoomsPage() {
   return (
     <DashboardLayout>
-      <StudyRoomsList />
+      <Suspense fallback={<div>Loading study rooms...</div>}>
+        <StudyRoomsListClient />
+      </Suspense>
     </DashboardLayout>
   )
 }
