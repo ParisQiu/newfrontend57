@@ -34,26 +34,7 @@ export default function HomePage() {
                 </Link>
               </div>
             </div>
-            <div className="relative hidden md:block">
-              <div className="relative rounded-lg bg-white p-6 shadow-xl">
-                <Image
-                  src="/placeholder.svg?height=400&width=500"
-                  alt="StudySmarter Dashboard Preview"
-                  className="rounded-lg shadow-lg"
-                  width={500}
-                  height={400}
-                />
-              </div>
-              <div className="absolute -bottom-6 -left-6 rounded-lg bg-blue-500 p-4 shadow-lg">
-                <div className="flex items-center space-x-2 text-white">
-                  <Award className="h-8 w-8" />
-                  <div>
-                    <p className="text-sm font-medium">Trusted by</p>
-                    <p className="text-xl font-bold">100,000+ Students</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+
           </div>
         </div>
       </section>

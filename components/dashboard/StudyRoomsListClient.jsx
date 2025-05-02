@@ -52,7 +52,7 @@ export default function StudyRoomsListClient() {
         <p>Error: {error}</p>
       ) : (
         <div className="space-y-3">
-          {studyRooms.map(room => (
+          {studyRooms.slice(0, 3).map(room => (
             <div key={room.room_id} className="rounded-md border p-3 hover:bg-gray-50">
               <div className="flex items-center justify-between">
                 <div>
