@@ -18,7 +18,7 @@ export default function UpcomingSchedule() {
     }
   })
 
-  const [studyRooms, setStudyRooms] = useState<any[]>([]);
+  const [studyRooms, setStudyRooms] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -77,12 +77,6 @@ export default function UpcomingSchedule() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
-
-  const handleEventClick = (event: typeof events[0]) => {
-    setModalTitle(event.title);
-    setModalMessage(event.status);
-    setModalOpen(true);
-  };
 
   return (
     <div className="rounded-lg border bg-white dark:bg-gray-900 shadow-sm dark:text-white">

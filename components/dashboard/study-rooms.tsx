@@ -5,7 +5,7 @@ import { Plus, Users } from "lucide-react"
 import { useEffect, useState } from "react";
 
 export default function StudyRooms() {
-  const [studyRooms, setStudyRooms] = useState<any[]>([]);
+  const [studyRooms, setStudyRooms] = useState<{ id: string; name: string; room_id: number; subject: string; capacity: number; description: string; date: string; start_time: string; end_time: string; participants: number; location: string; host: string; mode: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

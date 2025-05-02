@@ -1,6 +1,5 @@
 "use client";
 
-"use client";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -12,7 +11,7 @@ export default function Settings() {
   const [theme, setTheme] = useState(initialTheme);
   const [notifications, setNotifications] = useState(initialNotifications);
   const [password, setPassword] = useState("");
-  const [feedback, setFeedback] = useState<string | null>(null);
+  const [feedback] = useState<string | null>(null);
   const router = useRouter();
 
   const handleSave = (e: React.FormEvent) => {
@@ -100,4 +99,3 @@ export default function Settings() {
     </form>
   );
 }
-

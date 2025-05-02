@@ -148,7 +148,7 @@ export default function StudyRoomsList() {
       const newUrl = window.location.pathname
       window.history.replaceState({}, "", newUrl)
     }
-  }, [router, searchParams])
+  }, [router, searchParams, fetchStudyRooms])
 
   // Since we know tags will always be an empty array in this API response,
   // we'll just provide some dummy tags for the filter UI
@@ -178,6 +178,10 @@ export default function StudyRoomsList() {
   // Check if a room is joined
   const isRoomJoined = (roomId: number | string) => {
     return joinedRooms.some((jr) => jr.roomId.toString() === roomId.toString())
+  }
+
+  const handleJoinRoom = (room: { id: string; name: string }) => {
+    // TO DO: implement join room logic
   }
 
   return (

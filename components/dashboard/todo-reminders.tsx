@@ -18,7 +18,7 @@ export default function TodoReminders() {
   return (
     <div className="rounded-lg border bg-white dark:bg-gray-900 shadow-sm dark:text-white">
       <div className="flex items-center justify-between border-b p-4">
-        <h2 className="text-lg font-semibold">Today's Tasks</h2>
+        <h2 className="text-lg font-semibold">Today&apos;s Tasks</h2>
         <button className="flex items-center text-sm font-medium text-blue-600 hover:text-blue-500">
           <Plus className="mr-1 h-4 w-4" />
           Add Task

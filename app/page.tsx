@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from 'next/image'
 import { BookOpen, CheckCircle, Clock, Users, Award, ArrowRight } from "lucide-react"
 import Footer from "@/components/footer"
 import Navbar from "@/components/navbar"
@@ -35,10 +36,12 @@ export default function HomePage() {
             </div>
             <div className="relative hidden md:block">
               <div className="relative rounded-lg bg-white p-6 shadow-xl">
-                <img
+                <Image
                   src="/placeholder.svg?height=400&width=500"
                   alt="StudySmarter Dashboard Preview"
                   className="rounded-lg shadow-lg"
+                  width={500}
+                  height={400}
                 />
               </div>
               <div className="absolute -bottom-6 -left-6 rounded-lg bg-blue-500 p-4 shadow-lg">

@@ -1,10 +1,9 @@
 import { BookOpen } from "lucide-react"
 
 interface LogoProps {
-  className?: string
 }
 
-export default function Logo({ className = "h-8 w-auto" }: LogoProps) {
+export default function Logo({ }: LogoProps) {
   return (
     <div className="flex items-center">
       <div className="mr-2 flex h-8 w-8 items-center justify-center rounded-md bg-blue-600 text-white">

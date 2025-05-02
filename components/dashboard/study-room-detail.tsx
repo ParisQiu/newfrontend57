@@ -33,15 +33,6 @@ interface StudyRoomMessage {
   userAvatar: string
 }
 
-interface StudyRoomMaterial {
-  id: string;
-  name: string;
-  type: string;
-  size: string;
-  uploadedBy: string;
-  uploadedAt: string;
-}
-
 interface StudyRoom {
   id: string;
   room_id: number;
@@ -80,10 +71,6 @@ interface StudyRoom {
     uploadedAt: string;
   }>;
   creator_id: number;
-}
-
-interface JoinedRoom {
-  roomId: string;
 }
 
 interface StudyRoomDetailProps {
@@ -219,7 +206,7 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
 
   useEffect(() => {
     fetchRoomData();
-  }, [roomId]);
+  }, [fetchRoomData]);
 
   const handleJoinRoom = () => {
     if (!room) return;

@@ -167,7 +167,7 @@ export default function CreateStudyRoomForm() {
   }
 
   // Update the form submission to show confirmation and redirect properly
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
     if (!validateForm()) {
