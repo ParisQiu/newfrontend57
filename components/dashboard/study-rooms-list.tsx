@@ -120,7 +120,7 @@ export default function StudyRoomsList() {
         };
         console.log('Normalized room:', normalized);
         return normalized;
-      }));
+      });
       
       // Log the normalized rooms for debugging
       console.log('Normalized rooms:', normalizedRooms)
