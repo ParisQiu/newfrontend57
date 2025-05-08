@@ -1,5 +1,6 @@
 import DashboardLayout from "@/components/dashboard/dashboard-layout"
 import StudyRooms from "@/components/dashboard/study-rooms"
+import StudyRoomsListClient from "@/components/dashboard/StudyRoomsListClient"
 
 import UpcomingSchedule from "@/components/dashboard/upcoming-schedule"
 /* import TodoReminders from "@/components/dashboard/todo-reminders" */

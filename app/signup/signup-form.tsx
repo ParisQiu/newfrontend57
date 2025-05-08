@@ -32,7 +32,7 @@ export default function SignupForm() {
     setError("")
 
     try {
-      const res = await fetch("https://studysmarterapp.onrender.com/api/signup", {
+      const res = await fetch("http://127.0.0.1:5000/api/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -42,27 +42,27 @@ export default function SignupForm() {
       console.log("✅ Full signup response:", data)
 
       if (res.status === 201) {
-        // Store token regardless of user info structure
         if (data.access_token) {
           localStorage.setItem("token", data.access_token)
 
-          // Handle different response structures
-          if (data.user && data.user.username) {
-            localStorage.setItem("username", data.user.username)
-          } else if (data.username) {
-            localStorage.setItem("username", data.username)
+          // Auto-login to fetch full user data
+          try {
+            const loginRes = await fetch("http://127.0.0.1:5000/api/login", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email: form.email, password: form.password }),
+            })
+            const loginData = await loginRes.json()
+            if (loginRes.ok && loginData.user) {
+              localStorage.setItem("username", loginData.user.username)
+              localStorage.setItem("email", loginData.user.email)
+              localStorage.setItem("userId", loginData.user.id.toString())
+            }
+          } catch {
+            // ignore auto-login errors
           }
 
-          // Save user ID to localStorage
-          if (data.user && data.user.id) {
-            localStorage.setItem("userId", data.user.id.toString())
-          } else if (data.id) {
-            localStorage.setItem("userId", data.id.toString())
-          }
-
-          console.log("Signup response data:", data) // Log the full response for debugging
-
-          // Redirect to dashboard instead of homepage
+          // Redirect to dashboard
           router.push("/dashboard")
         } else {
           setError("Signup succeeded but authentication token is missing")

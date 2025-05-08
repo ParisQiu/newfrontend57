@@ -61,10 +61,10 @@ export default function CreateStudyRoomForm() {
 
         // Try different API endpoints that might contain user information
         const endpoints = [
-          "https://studysmarterapp.onrender.com/api/user",
-          "https://studysmarterapp.onrender.com/api/users/me",
-          "https://studysmarterapp.onrender.com/api/profile",
-          "https://studysmarterapp.onrender.com/api/auth/me",
+          "http://127.0.0.1:5000/api/user",
+          "http://127.0.0.1:5000/api/users/me",
+          "http://127.0.0.1:5000/api/profile",
+          "http://127.0.0.1:5000/api/auth/me",
         ]
 
         for (const endpoint of endpoints) {
@@ -188,6 +188,8 @@ export default function CreateStudyRoomForm() {
       // Use either the fetched user ID or the manually entered one
       const creatorId = userId !== null ? userId : Number(formData.creator_id)
 
+      // Use raw HH:mm for start_time and end_time per API spec
+      // No ISO formatting needed
       // Format the data according to what the API expects using snake_case
       const requestData = {
         name: formData.name,
@@ -213,14 +215,14 @@ export default function CreateStudyRoomForm() {
       console.log("Form data:", formData)
       console.log("Sending study room data:", requestData)
       console.log("Time values:", {
-        startTime: formData.startTime,
-        endTime: formData.endTime,
+        startTime: formData.start_time,
+        endTime: formData.end_time,
         start_time: requestData.start_time,
         end_time: requestData.end_time
       })
 
       console.log('Sending request to API...')
-      const response = await fetch("https://studysmarterapp.onrender.com/api/study_rooms", {
+      const response = await fetch("http://127.0.0.1:5000/api/study_rooms", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -273,8 +275,11 @@ export default function CreateStudyRoomForm() {
         mode: "",
       })
 
-      // Redirect to the study rooms list with a refresh parameter
-      router.push("/dashboard/study-rooms?refresh=true")
+      // Redirect to the new room's detail page
+      if (responseData.room_id) {
+        router.push(`/dashboard/study-rooms/${responseData.room_id}`)
+      }
+
     } catch (error) {
       console.error("Error creating study room:", error)
       setErrors({

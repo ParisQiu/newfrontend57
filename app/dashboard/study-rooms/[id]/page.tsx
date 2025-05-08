@@ -1,31 +1,24 @@
-import type { Metadata } from "next"
-import DashboardLayout from "@/components/dashboard/dashboard-layout"
-import StudyRoomDetail from "@/components/dashboard/study-room-detail"
+import type { Metadata } from "next";
+import DashboardLayout from "@/components/dashboard/dashboard-layout";
+import StudyRoomDetailClientWrapper from '@/components/dashboard/StudyRoomDetailClientWrapper';
 
 type Props = {
   params: { id: string }
-}
+};
 
-export async function generateMetadata(
-  props: Props
-): Promise<Metadata> {
-  // Get the room ID from params
-  const params = await props.params
-  const roomId = params.id
-
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const { id } = await props.params;
   return {
-    title: `Study Room ${roomId} | StudySmarter`,
+    title: `Study Room ${id} | StudySmarter`,
     description: "Join and collaborate in a study room",
-  }
+  };
 }
 
 export default async function StudyRoomPage(props: Props) {
-  const params = await props.params
-  const roomId = params.id
-  
+  const { id } = await props.params;
   return (
     <DashboardLayout>
-      <StudyRoomDetail roomId={roomId} />
+      <StudyRoomDetailClientWrapper roomId={id} />
     </DashboardLayout>
-  )
+  );
 }

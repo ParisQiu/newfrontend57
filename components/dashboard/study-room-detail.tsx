@@ -27,34 +27,36 @@ interface StudyRoomParticipant {
 }
 
 interface StudyRoomMessage {
-  id: string
-  userId: string
-  userName: string
-  userAvatar: string
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  content: string;
+  timestamp: string;
 }
 
-interface StudyRoom {
+export interface StudyRoom {
   id: string;
   room_id: number;
   name: string;
-  title: string;
-  description: string;
-  tags: string[];
-  visibility: string;
-  startTime: string;
-  endTime: string;
-  date: string;
-  capacity: number;
-  location: string;
-  mode: string;
-  participants: Array<{
+  title?: string;
+  description?: string;
+  tags?: string[];
+  visibility?: string;
+  startTime?: string;
+  endTime?: string;
+  date?: string;
+  capacity?: number;
+  location?: string;
+  mode?: string;
+  participants?: Array<{
     id: string;
     name: string;
     avatar: string;
     role: "host" | "participant";
-    status: "online" | "offline";
+    status: "online" | "offline" | "away";
   }>;
-  messages: Array<{
+  messages?: Array<{
     id: string;
     userId: string;
     userName: string;
@@ -62,7 +64,7 @@ interface StudyRoom {
     content: string;
     timestamp: string;
   }>;
-  materials: Array<{
+  materials?: Array<{
     id: string;
     name: string;
     type: string;
@@ -70,11 +72,25 @@ interface StudyRoom {
     uploadedBy: string;
     uploadedAt: string;
   }>;
-  creator_id: number;
+  creator_id?: number | string;
+  creator?: { username?: string; email?: string };
+  host?: string;
 }
 
 interface StudyRoomDetailProps {
   roomId: string;
+}
+
+// 工具函数：确保 time 字符串为 'HH:mm' 格式
+function extractTime(str: string | undefined | null): string {
+  if (!str) return '';
+  // 如果有T，提取T后面的部分
+  const tIndex = str.indexOf('T');
+  if (tIndex !== -1) {
+    return str.slice(tIndex + 1, tIndex + 6); // "10:00"
+  }
+  // 如果是 "10:00:00" 或 "10:00"
+  return str.slice(0, 5);
 }
 
 export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
@@ -88,7 +104,16 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
   const [joinSuccess, setJoinSuccess] = useState(false);
   const [leaveSuccess, setLeaveSuccess] = useState(false);
 
+  // 修正 useEffect，确保 fetchRoomData 只在 roomId 变化时调用一次
+  React.useEffect(() => {
+    fetchRoomData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId]);
+
   const fetchRoomData = async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    let rawText = '';
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -96,66 +121,87 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
         return;
       }
 
-      const response = await fetch(
-        `https://studysmarterapp.onrender.com/api/study_rooms/${roomId}`,
+      let response = await fetch(
+        `http://127.0.0.1:5000/api/study_rooms/${roomId}`,
         {
           method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
         }
       );
+      clearTimeout(timeoutId);
+
+      const contentType = response.headers.get('content-type') || '';
+      let data: any = null;
+      let rawText = '';
+      rawText = await response.text();
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        if (contentType.includes('application/json')) {
+          try {
+            const errorJson = JSON.parse(rawText);
+            throw new Error(errorJson.message || `HTTP error: ${response.status}`);
+          } catch (jsonErr: any) {
+            throw new Error('Failed to parse error JSON: ' + jsonErr.message + (rawText ? ('\nRaw content:' + rawText.slice(0, 200)) : ''));
+          }
+        } else {
+          throw new Error(`HTTP error: ${response.status}\n${rawText.slice(0, 200)}`);
+        }
+      }
+      if (contentType.includes('application/json')) {
+        try {
+          data = JSON.parse(rawText);
+        } catch (jsonErr: any) {
+          throw new Error('Failed to parse API response: ' + jsonErr.message + (rawText ? ('\nRaw content:' + rawText.slice(0, 200)) : ''));
+        }
+      } else {
+        throw new Error('API did not return JSON: ' + rawText.slice(0, 200));
       }
 
-      const data = await response.json();
-      console.log("Fetched room data:", data);
+      // Enforce time format check
+      const hhmmRegex = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+      const startTime = extractTime(data.startTime || data.start_time);
+      const endTime = extractTime(data.endTime || data.end_time);
+      if (!hhmmRegex.test(startTime) || !hhmmRegex.test(endTime)) {
+        const msg = `[Time format check] startTime: ${startTime}, endTime: ${endTime} do not match 'HH:mm' format!`;
+        console.error(msg);
+        setError(msg);
+        throw new Error('API did not return JSON: ' + rawText.slice(0, 200));
+      }
 
-      // Log the description from the API response
-      console.log("Room description from API:", data.description);
-
+      // mockRoom 逻辑和 setRoom、setIsJoined
       const description = data.description || "No description available";
-
       const roomMetadata = JSON.parse(localStorage.getItem("roomMetadata") || "{}");
       const metadata = roomMetadata[data.room_id] || {};
-
       const joinedRoomsRaw = localStorage.getItem("joinedStudyRooms");
       const joinedRoomsArr = JSON.parse(joinedRoomsRaw || "[]");
-
-      if (!Array.isArray(joinedRoomsArr)) {
-        console.error("joinedRoomsArr is not an array:", joinedRoomsArr);
-        return;
-      }
-
-      const userHasJoined = joinedRoomsArr.some(
+      const userHasJoined = Array.isArray(joinedRoomsArr) && joinedRoomsArr.some(
         (jr) => jr.roomId.toString() === data.room_id.toString()
       );
-
+      const hostName = (data.creator && data.creator.username) ? data.creator.username : "Host";
+      const currentUserId = String(localStorage.getItem("userId") || "user-1");
+      const currentUsername = String(localStorage.getItem("username") || "User");
+      const isHost = currentUsername === hostName;
       const participants = [
         {
           id: "host-1",
-          name: "Host",
-          avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=host1",
-          role: "host",
-          status: "online",
+          name: String(hostName),
+          avatar: "http://127.0.0.1:5000/7.x/avataaars/svg?seed=host1",
+          role: "host" as "host",
+          status: "online" as "online",
         },
-        ...(userHasJoined
-          ? [
-              {
-                id: localStorage.getItem("userId") || "user-1",
-                name: localStorage.getItem("userName") || "User",
-                avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${
-                  localStorage.getItem("userId") || "user-1"
-                }`,
-                role: "participant",
-                status: "online",
-              },
-            ]
-          : []),
+        ...(
+          userHasJoined && !isHost
+            ? [{
+                id: currentUserId,
+                name: currentUsername,
+                avatar: `http://127.0.0.1:5000/7.x/avataaars/svg?seed=${currentUserId}`,
+                role: "participant" as "participant",
+                status: "online" as "online",
+              }]
+            : []
+        ),
       ];
-
       const mockRoom: StudyRoom = {
         id: `room-${data.room_id}`,
         room_id: Number(data.room_id),
@@ -175,8 +221,8 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
           {
             id: "msg-1",
             userId: "host-1",
-            userName: "Host",
-            userAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=host1",
+            userName: hostName,
+            userAvatar: "http://127.0.0.1:5000/7.x/avataaars/svg?seed=host1",
             content: "Welcome to the study room! Let's get started.",
             timestamp: new Date().toISOString(),
           },
@@ -187,20 +233,24 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
             name: "Study Guide.pdf",
             type: "pdf",
             size: "2.5 MB",
-            uploadedBy: "Host",
+            uploadedBy: hostName,
             uploadedAt: "Today",
           },
         ],
         creator_id: data.creator_id || 0,
       };
-
       setRoom(mockRoom);
       setLoading(false);
       setIsJoined(userHasJoined);
-    } catch (err) {
-      console.error("Error fetching room data:", err);
-      setError(err instanceof Error ? err.message : "Failed to fetch room data");
-      setLoading(false);
+
+    } catch (err: any) {
+      if (err instanceof SyntaxError) {
+        throw new Error('Failed to parse API response: ' + err.message + (rawText ? ('\nRaw content:' + rawText.slice(0, 200)) : ''));
+      } else {
+        console.error("Error fetching room data:", err);
+        setError(err instanceof Error ? err.message : "Failed to fetch room data");
+        setLoading(false);
+      }
     }
   };
 
@@ -225,7 +275,7 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
         {
           id: userId,
           name: username,
-          avatar: "/default-profile-photo.jpg",
+          avatar: "/blueportrait.jpg",
           role: "participant",
           status: "online",
         },
@@ -333,7 +383,7 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
         id: `msg-${Date.now()}`,
         userId: userId,
         userName: username,
-        userAvatar: "/default-profile-photo.jpg",
+        userAvatar: "/blueportrait.jpg",
         content: newMessage,
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       }
@@ -385,8 +435,8 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
       {/* Back button */}
       <div>
         <Link
-          href="/dashboard/study-rooms"
-          className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-500"
+          href="/dashboard/study-rooms/all"
+          className="flex items-center text-blue-600 hover:underline mb-4"
         >
           <ArrowLeft className="mr-1 h-4 w-4" />
           Back to Study Rooms
@@ -430,7 +480,53 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
             </div>
           </div>
           <div>
-            {isJoined ? (
+            {/* If user is the host, show Edit and Delete buttons, otherwise show Join/Leave */}
+            {(() => {
+              if (typeof window === 'undefined' || !room) return false;
+              const localUsername = localStorage.getItem('username');
+              const localEmail = localStorage.getItem('email');
+              if (room.creator && localUsername && localEmail) {
+                return (
+                  room.creator.username === localUsername &&
+                  room.creator.email === localEmail
+                );
+              }
+              return String(room.creator_id) === String(localStorage.getItem('userId'));
+            })() ? (
+              <div className="flex gap-2">
+                <button
+                  className="rounded bg-yellow-500 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-600"
+                  onClick={() => router.push(`/dashboard/study-rooms/${room.room_id}/edit`)}
+                >
+                  Edit
+                </button>
+                <button
+                  className="rounded bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600"
+                  onClick={async () => {
+                    if (window.confirm('Are you sure you want to delete this room?')) {
+                      try {
+                        const token = localStorage.getItem('token');
+                        if (!token) {
+                          alert('Not logged in!');
+                          return;
+                        }
+                        const res = await fetch(`http://127.0.0.1:5000/api/study_rooms/${room.room_id}`, {
+                          method: 'DELETE',
+                          headers: { Authorization: `Bearer ${token}` },
+                        });
+                        if (!res.ok) throw new Error('Failed to delete room');
+                        router.push('/dashboard/study-rooms');
+                      } catch (err) {
+                        const msg = err instanceof Error ? err.message : String(err);
+                        alert('Delete failed: ' + msg);
+                      }
+                    }
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            ) : isJoined ? (
               <button
                 onClick={handleLeaveRoom}
                 className="rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-600 shadow-sm hover:bg-red-50"
@@ -462,7 +558,7 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
             <Clock className="mr-2 h-5 w-5 text-gray-400" />
             <div>
               <p className="text-xs text-gray-500">Time</p>
-              <p className="text-sm font-medium">{room.startTime} - {room.endTime}</p>
+              <p className="text-sm font-medium">{extractTime(room.startTime)} - {extractTime(room.endTime)}</p>
             </div>
           </div>
           <div className="flex items-center">
@@ -497,7 +593,7 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
               <div className="relative mr-3">
                 <div className="group relative">
                   <img
-                    src={participant.avatar || "/default-profile-photo.jpg"}
+                    src={participant.avatar || "/blueportrait.jpg"}
                     alt={participant.name}
                     className="h-10 w-10 rounded-full object-cover cursor-pointer"
                     onClick={() => {
@@ -540,7 +636,7 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
                           if (fileInput) fileInput.click();
                         }}
                       >
-                        <span className="text-xs text-white bg-black/60 rounded px-2 py-1">更换头像</span>
+                        <span className="text-xs text-white bg-black/60 rounded px-2 py-1">Change Avatar</span>
                       </div>
                     </>
                   )}
@@ -563,7 +659,7 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
                   )}
                 </p>
                 <p className="text-xs text-gray-500">
-                  {participant.role === "host" ? "Host" : "Participant"}
+                  {idx === 0 ? "Host" : "Participant"}
                 </p>
                 {/* Allow status change if mock room or current user */}
                 {((!room.id || String(room.id).startsWith("mock")) || participant.id === localStorage.getItem("userId")) && (
@@ -633,7 +729,7 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
                     {room.messages.map((message) => (
                       <div key={message.id} className="flex">
                         <img
-                          src={message.userAvatar || "/default-profile-photo.jpg"}
+                          src={message.userAvatar || "/blueportrait.jpg"}
                           alt={message.userName}
                           className="mr-3 h-8 w-8 rounded-full object-cover"
                         />
@@ -645,7 +741,7 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
                                 <span className="ml-1 text-xs text-blue-600">(You)</span>
                               )}
                             </span>
-                            <span className="ml-2 text-xs text-gray-500">{message.timestamp}</span>
+                            <span className="ml-2 text-xs text-gray-500">{message.timestamp.replace(/\.[0-9]{3}Z$/, '').replace('T', ' ')}</span>
                           </div>
                           <p className="text-sm text-gray-700">{message.content}</p>
                         </div>

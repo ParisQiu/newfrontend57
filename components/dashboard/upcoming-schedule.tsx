@@ -2,8 +2,11 @@
 import Link from "next/link"
 import { Calendar, Plus } from "lucide-react"
 import StatusModal from "../StatusModal"
-
 import React, { useState } from "react";
+
+import type { StudyRoom } from './study-room-detail';
+// 补充类型定义（如果需要）
+// interface StudyRoom { creator?: { username?: string; email?: string }; host?: string; ... }
 
 export default function UpcomingSchedule() {
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
@@ -18,10 +21,11 @@ export default function UpcomingSchedule() {
     }
   })
 
-  const [studyRooms, setStudyRooms] = useState<{ id: string; name: string }[]>([]);
+  const [studyRooms, setStudyRooms] = useState<StudyRoom[]>(([] as StudyRoom[]));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // -------- useEffect with debug info ---------
   React.useEffect(() => {
     const fetchStudyRooms = async () => {
       setLoading(true);
@@ -32,18 +36,21 @@ export default function UpcomingSchedule() {
           setLoading(false);
           return;
         }
-        const response = await fetch("https://studysmarterapp.onrender.com/api/study_rooms", {
+        const response = await fetch("http://127.0.0.1:5000/api/study_rooms", {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            Pragma: "no-cache",
-            Expires: "0",
           },
         });
         if (!response.ok) throw new Error("Failed to fetch study rooms");
         const data = await response.json();
+        console.log("Fetched study rooms:", data); // 1. 打印接口返回数据
+
+        const storedUserId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
+        console.log("Current userId:", storedUserId); // 2. 打印当前userId
+        const userId = storedUserId || "";
+
         const rooms = Array.isArray(data) ? data : data.rooms || [];
         const roomMetadata = JSON.parse(localStorage.getItem('roomMetadata') || '{}');
         const normalizedRooms = rooms.map((room: any) => {
@@ -55,16 +62,42 @@ export default function UpcomingSchedule() {
             subject: room.subject || "",
             capacity: room.capacity || 0,
             description: room.description || "No description available",
-            date: metadata.date || "",
-            start_time: metadata.start_time || "",
-            end_time: metadata.end_time || "",
-            participants: room.participants || 0,
-            location: metadata.location || "",
+            date: metadata.date || room.date || "",
+            startTime: metadata.startTime || room.startTime || room.start_time || "",
+            endTime: metadata.endTime || room.endTime || room.end_time || "",
+            participants: Array.isArray(room.participants) ? room.participants : [],
+            location: metadata.location || room.location || "",
             host: room.host || "Anonymous",
-            mode: metadata.mode || "hybrid"
+            mode: metadata.mode || room.mode || "hybrid",
+            creator_id: room.creator_id || metadata.creator_id || "",
+            creator: room.creator || null,
           };
         });
-        setStudyRooms(normalizedRooms);
+        // 展示全部房间，按日期升序和时间升序排序
+        const sortedRooms = normalizedRooms
+          .filter((room: StudyRoom) => room.date) // 只要有 date 就显示
+          .sort((a: StudyRoom, b: StudyRoom) => {
+            // 先按日期升序
+            const aDate = a.date ? new Date(a.date) : new Date("2100-01-01");
+            const bDate = b.date ? new Date(b.date) : new Date("2100-01-01");
+            const dateDiff = aDate.getTime() - bDate.getTime();
+            if (dateDiff !== 0) {
+              return dateDiff; // 日期早的在前
+            }
+            // 日期相同，按 startTime 升序
+            // 没有 startTime 的排在最后
+            if (a.startTime && b.startTime) {
+              // 比较时间字符串
+              return a.startTime.localeCompare(b.startTime);
+            } else if (a.startTime) {
+              return -1;
+            } else if (b.startTime) {
+              return 1;
+            } else {
+              return 0;
+            }
+          });
+        setStudyRooms(sortedRooms);
         setLoading(false);
       } catch (err: any) {
         setError(err.message || "Unknown error");
@@ -73,6 +106,7 @@ export default function UpcomingSchedule() {
     };
     fetchStudyRooms();
   }, []);
+  // -------- end useEffect ---------
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
@@ -114,7 +148,7 @@ export default function UpcomingSchedule() {
           ) : studyRooms.length === 0 ? (
             <div className="text-center text-gray-500 py-8">No study rooms available.</div>
           ) : (
-            studyRooms.slice(0, 5).map((room) => {
+            studyRooms.slice(0, 3).map((room) => {
               // Try to find the day offset for this room's date
               let eventDayLabel = "";
               if (room.date) {
@@ -131,17 +165,29 @@ export default function UpcomingSchedule() {
                   <div className="flex items-center">
                     <div className="mr-3 h-10 w-1 rounded-full bg-blue-500"></div>
                     <div>
-                      <h3 className="font-medium">{room.name}</h3>
+                      <h3 className="font-medium flex items-center gap-2">
+  {room.name}
+  <span className="ml-2 text-xs text-gray-500">Host: {(room.creator && room.creator.username) ? room.creator.username : (room.host || 'Unknown')}</span>
+</h3>
                       <div className="flex items-center text-sm text-gray-500">
                         <Calendar className="mr-1 h-3 w-3" />
                         <span>
-                          {eventDayLabel}
-                          {room.start_time || room.end_time ? `, ${room.start_time || ''}${room.start_time && room.end_time ? ' - ' : ''}${room.end_time || ''}` : ''}
+                          {room.date ? (
+                            <>
+                              {room.date}
+                              {room.startTime || room.endTime ? `, ${room.startTime || ''}${room.startTime && room.endTime ? ' - ' : ''}${room.endTime || ''}` : ''}
+                            </>
+                          ) : (
+                            eventDayLabel
+                          )}
                         </span>
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
-                        {(room.start_time || room.end_time) && (
-                          <div><span className="font-medium">Schedule:</span> {room.start_time || 'N/A'}{room.start_time && room.end_time ? ' - ' : ''}{room.end_time || ''}</div>
+                        {room.date && (
+                          <div><span className="font-medium">Date:</span> {room.date}</div>
+                        )}
+                        {(room.startTime || room.endTime) && (
+                          <div><span className="font-medium">Time:</span> {room.startTime || 'N/A'}{room.startTime && room.endTime ? ' - ' : ''}{room.endTime || ''}</div>
                         )}
                         {room.location && <div><span className="font-medium">Venue:</span> {room.location}</div>}
                         {room.mode && <div><span className="font-medium">Mode:</span> {room.mode}</div>}

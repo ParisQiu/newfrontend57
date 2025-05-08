@@ -40,19 +40,28 @@ export default function Community() {
       <div className="p-4">
         <div className="space-y-3">
           {discussions.map((discussion) => (
-            <div key={discussion.id} className="rounded-md border p-3 hover:bg-gray-50">
-              <Link href={`/dashboard/community/discussions/${discussion.id}`}>
-                <h3 className="font-medium">{discussion.title}</h3>
-                <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">{discussion.description}</p>
-                <div className="mt-1 flex items-center justify-between">
-                  <span className="text-sm text-gray-500">by {discussion.author}</span>
-                  <div className="flex items-center text-sm text-gray-500">
-                    <MessageSquare className="mr-1 h-3 w-3" />
-                    <span>{discussion.replies} replies</span>
+            <div key={discussion.id} className="rounded-md border p-3 hover:bg-gray-50 flex items-center">
+              <img
+                src="/blueportrait.jpg"
+                alt="avatar"
+                style={{ width: 32, height: 32, borderRadius: '50%', marginRight: 12 }}
+              />
+              <div style={{ flex: 1 }}>
+                <Link href={`/dashboard/community/discussions/${discussion.id}`}>
+                  <div>
+                    <h3 className="font-medium">{discussion.title}</h3>
+                    <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">{discussion.description}</p>
+                    <div className="mt-1 flex items-center justify-between">
+                      <span className="text-xs text-gray-500">{discussion.author}</span>
+                      <div className="flex items-center text-xs text-gray-500">
+                        <MessageSquare className="mr-1 h-3 w-3" />
+                        <span>{discussion.replies} replies</span>
+                      </div>
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500">{discussion.time}</p>
                   </div>
-                </div>
-                <p className="mt-1 text-xs text-gray-500">{discussion.time}</p>
-              </Link>
+                </Link>
+              </div>
             </div>
           ))}
         </div>

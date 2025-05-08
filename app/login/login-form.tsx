@@ -35,7 +35,7 @@ export default function LoginForm() {
     setError("")
 
     try {
-      const res = await fetch("https://studysmarterapp.onrender.com/api/login", {
+      const res = await fetch("http://127.0.0.1:5000/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

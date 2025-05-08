@@ -19,7 +19,7 @@ export default function StudyRooms() {
           setLoading(false);
           return;
         }
-        const response = await fetch("https://studysmarterapp.onrender.com/api/study_rooms", {
+        const response = await fetch("http://127.0.0.1:5000/api/study_rooms", {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -75,8 +75,13 @@ export default function StudyRooms() {
       </div>
       <div className="p-4">
         <Suspense fallback={<p>Loading study rooms list…</p>}>
-          <StudyRoomsListClient studyRooms={studyRooms} loading={loading} error={error} />
+          <StudyRoomsListClient studyRooms={studyRooms} loading={loading} error={error} showAll />
         </Suspense>
+      </div>
+      <div className="flex justify-center mt-4">
+        <Link href="/dashboard/study-rooms/all" className="rounded bg-blue-100 px-4 py-2 text-blue-600 font-medium hover:bg-blue-200 transition">
+          View all rooms
+        </Link>
       </div>
     </div>
   )

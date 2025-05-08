@@ -5,30 +5,75 @@ import Link from "next/link"
 import { Calendar, Filter, MapPin, Plus, Search, Tag, Users } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 
-interface StudyRoom {
+import type { StudyRoom } from './study-room-detail';
+
+  room_id: number;
+  id?: string;
+  name: string;
+  subject?: string;
+  capacity?: number;
+  description?: string;
+  room.tags?: string[];
+  room.date?: string;
+  start_time?: string;
+  end_time?: string;
+  participants?: number | (string | number)[];
+  location?: string;
+  host?: string;
+  creator_id?: number | string;
+  mode?: "online" | "offline" | "hybrid";
+  creator?: {
+    id?: string | number;
+    username?: string;
+    email?: string;
+  };
+}
+
   room_id: number
   id?: string
   name: string
   capacity: number
   description?: string
-  tags?: string[]
-  date?: string
+  room.tags?: string[]
+  room.date?: string
   start_time?: string
   end_time?: string
-  participants?: number
+  participants?: number | (string | number)[]
   location?: string
   host?: string
   creator_id?: number
   mode?: "online" | "offline" | "hybrid"
-}
-
-// Type for the joined rooms in localStorage
+  creator?: {
+    id?: string | number;
 interface JoinedRoom {
   roomId: string | number
   joinedAt: string
 }
 
+interface User {
+  id: string | number
+  username: string
+  email: string
+}
+
 export default function StudyRoomsList() {
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
+  useEffect(() => {
+    const storedUserId = localStorage.getItem("userId")
+    const storedUsername = localStorage.getItem("username")
+    const storedEmail = localStorage.getItem("email")
+    if (storedUserId && storedUsername && storedEmail) {
+      setCurrentUser({ id: storedUserId, username: storedUsername, email: storedEmail })
+    }
+  }, [])
+
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null)
+  useEffect(() => {
+    const storedUserId = localStorage.getItem("userId")
+    if (storedUserId && !isNaN(Number(storedUserId))) {
+      setCurrentUserId(Number(storedUserId))
+    }
+  }, [])
   const [studyRooms, setStudyRooms] = useState<StudyRoom[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -68,13 +113,13 @@ export default function StudyRoomsList() {
         return
       }
 
-      const response = await fetch("https://studysmarterapp.onrender.com/api/study_rooms", {
+      const response = await fetch("http://127.0.0.1:5000/api/study_rooms", {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
           // Add cache control to prevent caching
-          "Cache-Control": "no-cache, no-store, must-revalidate",
+          "Cache-Control": "no-cache, no-store, must-revaliroom.date",
           Pragma: "no-cache",
           Expires: "0",
         },
@@ -103,21 +148,26 @@ export default function StudyRoomsList() {
         const metadata = roomMetadata[room.room_id] || {};
         console.log('Metadata for room', room.room_id, ':', metadata);
         
-        const normalized = {
+        const normalized: StudyRoom = {
           room_id: room.room_id || 0,
           id: room.id || `room-${room.room_id || Math.random().toString(36).substr(2, 9)}`,
-          name: room.name || "Unnamed Room",
-          capacity: room.capacity || 0,
-          description: room.description || "No description available",
-          tags: [],
-          date: metadata.date || "",
-          start_time: metadata.start_time || "",
-          end_time: metadata.end_time || "",
-          participants: room.participants || 0,
-          location: metadata.location || "",
-          host: room.host || "Anonymous",
-          mode: metadata.mode || "hybrid"
-        };
+          name: room.name,
+          capacity: room.capacity,
+          description: room.description,
+          room.tags: room.room.tags,
+          room.date: room.room.date,
+          start_time: room.start_time,
+          end_time: room.end_time,
+          participants: room.participants,
+          location: room.location,
+          host: room.host,
+          creator_id: room.creator_id,
+          creator: room.creator || {
+            username: metadata.username,
+            email: metadata.email,
+          },
+          mode: room.mode,
+        }
         console.log('Normalized room:', normalized);
         return normalized;
       });
@@ -150,26 +200,34 @@ export default function StudyRoomsList() {
     }
   }, [router, searchParams, fetchStudyRooms])
 
-  // Since we know tags will always be an empty array in this API response,
-  // we'll just provide some dummy tags for the filter UI
+  // Since we know room.tags will always be an empty array in this API response,
+  // we'll just provide some dummy room.tags for the filter UI
   const allTags = useMemo(() => {
-    // If we have any rooms with actual tags, use those
+    // If we have any rooms with actual room.tags, use those
     const existingTags = studyRooms
-      .filter((room) => Array.isArray(room.tags) && room.tags.length > 0)
-      .flatMap((room) => room.tags || [])
+      .filter((room) => Array.isArray(room.room.tags) && room.room.tags.length > 0)
+      .flatMap((room) => room.room.tags || [])
 
-    // If no tags exist, return an empty array - no need for dummy tags
+    // If no room.tags exist, return an empty array - no need for dummy room.tags
     return Array.from(new Set(existingTags))
   }, [studyRooms])
 
-  // Filter study rooms based on search query only (since we don't have tags)
-  const filteredRooms = studyRooms.filter((room) => {
-    return (
+  // 分组：我创建的房间和其他房间
+  const createdRooms = studyRooms.filter(room => String(room.creator_id) === String(currentUserId));
+  const otherRooms = studyRooms.filter(room => String(room.creator_id) !== String(currentUserId));
+
+  // Unified filteredRooms: all rooms filtered by search and room.tags
+  const filteredRooms: StudyRoom[] = studyRooms.filter((room) => {
+    const matchesSearch =
       searchQuery === "" ||
       room.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (room.description && room.description.toLowerCase().includes(searchQuery.toLowerCase()))
-    )
-  })
+      (room.description && room.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesTags =
+      selectedTags.length === 0 ||
+      (room.room.tags && selectedTags.every((tag) => room.room.tags?.includes(tag)));
+    return matchesSearch && matchesTags;
+  });
+
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]))
@@ -182,6 +240,18 @@ export default function StudyRoomsList() {
 
   const handleJoinRoom = (room: { id: string; name: string }) => {
     // TO DO: implement join room logic
+  }
+
+  // leave room handler (dummy, replace with real API if needed)
+  function handleLeaveRoom(roomId: number | string) {
+    // TODO: implement leave logic
+    alert(`Leave room ${roomId}`);
+  }
+
+  // delete room handler (dummy, replace with real API if needed)
+  function handleDeleteRoom(roomId: number | string) {
+    // TODO: implement delete logic
+    alert(`Delete room ${roomId}`);
   }
 
   return (
@@ -270,74 +340,111 @@ export default function StudyRoomsList() {
           <div className="rounded-lg border bg-white p-8 text-center shadow-sm">
             <p className="text-red-600">{error}</p>
           </div>
-        ) : filteredRooms.length === 0 ? (
-          <div className="rounded-lg border bg-white p-8 text-center shadow-sm">
-            <p className="text-gray-600">No study rooms found matching your criteria.</p>
-          </div>
         ) : (
-          filteredRooms.map((room) => (
-            <div key={room.room_id} className="rounded-lg border bg-white p-4 shadow-sm hover:shadow-md">
-              <div className="flex flex-col justify-between space-y-4 sm:flex-row sm:space-y-0">
-                <div>
-                  <Link href={`/dashboard/study-rooms/${room.room_id}`}>
-                    <h2 className="text-xl font-semibold text-gray-900 hover:text-blue-600">{room.name}</h2>
-                  </Link>
-                  <p className="mt-1 text-gray-600">{room.description}</p>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Link
-                    href={`/dashboard/study-rooms/${room.room_id}`}
-                    className={`rounded-md px-4 py-2 text-sm font-medium ${
-                      isRoomJoined(room.room_id)
-                        ? "bg-green-100 text-green-700 hover:bg-green-200"
-                        : "bg-blue-600 text-white hover:bg-blue-700"
-                    }`}
-                  >
-                    {isRoomJoined(room.room_id) ? "Continue" : "Join Room"}
-                  </Link>
-                </div>
-              </div>
-
-              <div className="mt-4 grid grid-cols-1 gap-3 border-t border-gray-200 pt-4 sm:grid-cols-2 md:grid-cols-3">
-                <div className="flex items-center">
-                  <Users className="mr-2 h-4 w-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">
-                    {(() => {
-                      const joined = isRoomJoined(room.room_id);
-                      let count = room.participants || 0;
-                      if (joined && count < room.capacity) count += 1;
-                      return `${count}/${room.capacity} participants`;
-                    })()}
-                  </span>
-                </div>
-                <div className="flex items-center">
-                  <MapPin className="mr-2 h-4 w-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">
-                    {room.mode === 'online' ? 'Online' : room.location || 'No location specified'}
-                    {room.mode && ` (${room.mode})`}
-                  </span>
-                </div>
-                <div className="flex flex-col space-y-1">
-                  <div className="flex items-center">
-                    <Calendar className="mr-2 h-4 w-4 text-gray-400" />
-                    <span className="text-sm text-gray-600">
-                      <span className="font-medium">Date:</span> {room.date || 'Not specified'}
-                    </span>
-                  </div>
-                  {(room.start_time || room.end_time) && (
-                    <div className="flex items-center pl-6">
-                      <span className="text-sm text-gray-600">
-                        <span className="font-medium">Time:</span> {room.start_time || 'Not specified'} - {room.end_time || 'Not specified'}
-                      </span>
+          <>
+            <h2 className="text-lg font-semibold mb-2">All Study Rooms</h2>
+            {filteredRooms.length === 0 ? (
+              <p className="text-gray-500 mb-4">No rooms found.</p>
+            ) : (
+              filteredRooms.map((room: StudyRoom) => {
+                console.log('StudyRoomsList - room:', room);
+                console.log('StudyRoomsList - creator:', room.creator);
+                console.log('StudyRoomsList - currentUser:', currentUser);
+                const isCreator = currentUser && room.creator
+                  && room.creator.username === currentUser.username
+                  && room.creator.email === currentUser.email;
+                const joined = room.participants && currentUser && Array.isArray(room.participants)
+                  ? room.participants.includes(currentUser.id)
+                  : false;
+                console.log('StudyRoomsList - isCreator:', isCreator, 'joined:', joined);
+                return (
+                  <div key={room.room_id} className="rounded-lg border bg-white p-4 shadow-sm hover:shadow-md mb-4">
+                    <div className="flex flex-col justify-between space-y-4 sm:flex-row sm:space-y-0">
+                      <div>
+                        <Link href={`/dashboard/study-rooms/${room.room_id}`}>
+                          <h2 className="text-xl font-semibold text-gray-900 hover:text-blue-600">{room.name}</h2>
+                        </Link>
+                        <p className="mt-1 text-gray-600">{room.description || 'No description available'}</p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {/* Render action buttons: Edit/Delete for creators, Leave for participants, Join for others */}
+                        {isCreator ? (
+                          <>
+                            <Link
+                              href={`/dashboard/study-rooms/${room.room_id}/edit`}
+                              className="rounded-md bg-yellow-500 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-600"
+                            >
+                              Edit
+                            </Link>
+                            <button
+                              onClick={() => handleDeleteRoom(room.room_id)}
+                              className="rounded-md bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600"
+                            >
+                              Delete
+                            </button>
+                          </>
+                        ) : joined ? (
+                          <button
+                            onClick={() => handleLeaveRoom(room.room_id)}
+                            className="rounded-md bg-red-100 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-200"
+                          >
+                            Leave
+                          </button>
+                        ) : (
+                          <Link
+                            href={`/dashboard/study-rooms/${room.room_id}`}
+                            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                          >
+                            Join Room
+                          </Link>
+                        )}
+                      </div>
                     </div>
-                  )}
-                </div>
-              </div>
-              {isRoomJoined(room.room_id) && (
-                <div className="mt-2 text-xs font-medium text-green-600">You have joined this room</div>
-              )}
-            </div>
-          ))
+                    <div className="mt-4 grid grid-cols-1 gap-3 border-t border-gray-200 pt-4 sm:grid-cols-2 md:grid-cols-3">
+                      <div className="flex items-center">
+                        <Users className="mr-2 h-4 w-4 text-gray-400" />
+                        <span className="text-sm text-gray-600">
+                          {(() => {
+                            const joined = isRoomJoined(room.room_id);
+                            let count = 0;
+                            if (Array.isArray(room.participants)) {
+                              count = room.participants.length;
+                            } else if (typeof room.participants === 'number') {
+                              count = room.participants;
+                            }
+                            if (joined && count < room.capacity) count += 1;
+                            return `${count}/${room.capacity} participants`;
+                          })()}
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <MapPin className="mr-2 h-4 w-4 text-gray-400" />
+                        <span className="text-sm text-gray-600">
+                          {room.mode === 'online' ? 'Online' : room.location || 'No location specified'}
+                          {room.mode && ` (${room.mode})`}
+                        </span>
+                      </div>
+                      <div className="flex flex-col space-y-1">
+                        <div className="flex items-center">
+                          <Calendar className="mr-2 h-4 w-4 text-gray-400" />
+                          <span className="text-sm text-gray-600">
+                            <span className="font-medium">Date:</span> {room.room.date || 'Not specified'}
+                          </span>
+                        </div>
+                        {(room.start_time || room.end_time) && (
+                          <div className="flex items-center pl-6">
+                            <span className="text-sm text-gray-600">
+                              <span className="font-medium">Time:</span> {room.start_time || 'Not specified'} - {room.end_time || 'Not specified'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </>
         )}
       </div>
     </div>

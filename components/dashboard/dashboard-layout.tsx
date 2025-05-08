@@ -43,7 +43,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         const token = localStorage.getItem("token")
         if (token) {
           // Try to call the logout API endpoint
-          await fetch("https://studysmarterapp.onrender.com/api/logout", {
+          await fetch("http://127.0.0.1:5000/api/logout", {
             method: "POST",
             headers: {
               Authorization: `Bearer ${token}`,
@@ -86,7 +86,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const navItems = [
     { icon: Home, label: "Dashboard", href: "/dashboard" },
-    { icon: Users, label: "Study Rooms", href: "/dashboard/study-rooms" },
+    { icon: Users, label: "My Study Rooms", href: "/dashboard/study-rooms" },
     { icon: Calendar, label: "Calendar", href: "/dashboard/calendar" },
 
 
