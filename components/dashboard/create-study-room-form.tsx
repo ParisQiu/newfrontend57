@@ -61,10 +61,10 @@ export default function CreateStudyRoomForm() {
 
         // Try different API endpoints that might contain user information
         const endpoints = [
-          "http://127.0.0.1:5000/api/user",
-          "http://127.0.0.1:5000/api/users/me",
-          "http://127.0.0.1:5000/api/profile",
-          "http://127.0.0.1:5000/api/auth/me",
+          "https://studysmarterapp.onrender.com/api/user",
+          "https://studysmarterapp.onrender.com/api/users/me",
+          "https://studysmarterapp.onrender.com/api/profile",
+          "https://studysmarterapp.onrender.com/api/auth/me",
         ]
 
         for (const endpoint of endpoints) {
@@ -222,7 +222,7 @@ export default function CreateStudyRoomForm() {
       })
 
       console.log('Sending request to API...')
-      const response = await fetch("http://127.0.0.1:5000/api/study_rooms", {
+      const response = await fetch("https://studysmarterapp.onrender.com/api/study_rooms", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

@@ -20,7 +20,7 @@ export default function StudyRoomsClient() {
           setLoading(false);
           return;
         }
-        const response = await fetch('http://127.0.0.1:5000/api/study_rooms', {
+        const response = await fetch('https://studysmarterapp.onrender.com/api/study_rooms', {
           method: 'GET',
           headers: {
             Authorization: `Bearer ${token}`,
@@ -36,7 +36,7 @@ export default function StudyRoomsClient() {
           sortedRooms.map(async room => {
             try {
               const detailRes = await fetch(
-                `http://127.0.0.1:5000/api/study_rooms/${room.room_id}`,
+                `https://studysmarterapp.onrender.com/api/study_rooms/${room.room_id}`,
                 { headers: { Authorization: `Bearer ${token}` } }
               );
               if (!detailRes.ok) { console.warn('Failed to fetch details for room', room.room_id); return room; }
@@ -103,7 +103,7 @@ export default function StudyRoomsClient() {
                           try {
                             const token = localStorage.getItem('token');
                             if (!token) { alert('Not logged in!'); return; }
-                            const res = await fetch(`http://127.0.0.1:5000/api/study_rooms/${room.room_id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+                            const res = await fetch(`https://studysmarterapp.onrender.com/api/study_rooms/${room.room_id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
                             if (!res.ok) throw new Error('Failed to delete room'); window.location.reload();
                           } catch (err) { alert('Delete failed: ' + err.message); }
                         }

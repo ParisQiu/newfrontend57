@@ -51,7 +51,7 @@ export default function StudyRoomsListClient({
           router.push("/login");
           return;
         }
-        const response = await fetch("http://127.0.0.1:5000/api/study_rooms", {
+        const response = await fetch("https://studysmarterapp.onrender.com/api/study_rooms", {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -64,7 +64,7 @@ export default function StudyRoomsListClient({
         const detailedRooms = await Promise.all(
           data.map(async (room: StudyRoom) => {
             try {
-              const detailRes = await fetch(`http://127.0.0.1:5000/api/study_rooms/${room.room_id}`, {
+              const detailRes = await fetch(`https://studysmarterapp.onrender.com/api/study_rooms/${room.room_id}`, {
                 headers: { Authorization: `Bearer ${token}` }
               });
               if (!detailRes.ok) {
@@ -147,7 +147,7 @@ export default function StudyRoomsListClient({
                                   alert('Not logged in!');
                                   return;
                                 }
-                                const res = await fetch(`http://127.0.0.1:5000/api/study_rooms/${room.room_id}`, {
+                                const res = await fetch(`https://studysmarterapp.onrender.com/api/study_rooms/${room.room_id}`, {
                                   method: 'DELETE',
                                   headers: { Authorization: `Bearer ${token}` },
                                 });
@@ -269,7 +269,7 @@ export default function StudyRoomsListClient({
                                     alert('Not logged in!');
                                     return;
                                   }
-                                  const res = await fetch(`http://127.0.0.1:5000/api/study_rooms/${room.room_id}`, {
+                                  const res = await fetch(`https://studysmarterapp.onrender.com/api/study_rooms/${room.room_id}`, {
                                     method: 'DELETE',
                                     headers: { Authorization: `Bearer ${token}` },
                                   });

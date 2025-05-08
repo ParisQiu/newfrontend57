@@ -32,7 +32,7 @@ export default function SignupForm() {
     setError("")
 
     try {
-      const res = await fetch("http://127.0.0.1:5000/api/signup", {
+      const res = await fetch("https://studysmarterapp.onrender.com/api/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -47,7 +47,7 @@ export default function SignupForm() {
 
           // Auto-login to fetch full user data
           try {
-            const loginRes = await fetch("http://127.0.0.1:5000/api/login", {
+            const loginRes = await fetch("https://studysmarterapp.onrender.com/api/login", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ email: form.email, password: form.password }),

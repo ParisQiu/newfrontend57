@@ -43,7 +43,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         const token = localStorage.getItem("token")
         if (token) {
           // Try to call the logout API endpoint
-          await fetch("http://127.0.0.1:5000/api/logout", {
+          await fetch("https://studysmarterapp.onrender.com/api/logout", {
             method: "POST",
             headers: {
               Authorization: `Bearer ${token}`,

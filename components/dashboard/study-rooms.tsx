@@ -19,7 +19,7 @@ export default function StudyRooms() {
           setLoading(false);
           return;
         }
-        const response = await fetch("http://127.0.0.1:5000/api/study_rooms", {
+        const response = await fetch("https://studysmarterapp.onrender.com/api/study_rooms", {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,

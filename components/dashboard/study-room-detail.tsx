@@ -122,7 +122,7 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
       }
 
       let response = await fetch(
-        `http://127.0.0.1:5000/api/study_rooms/${roomId}`,
+        `https://studysmarterapp.onrender.com/api/study_rooms/${roomId}`,
         {
           method: "GET",
           headers: { "Content-Type": "application/json" },
@@ -186,7 +186,7 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
         {
           id: "host-1",
           name: String(hostName),
-          avatar: "http://127.0.0.1:5000/7.x/avataaars/svg?seed=host1",
+          avatar: "https://studysmarterapp.onrender.com/7.x/avataaars/svg?seed=host1",
           role: "host" as "host",
           status: "online" as "online",
         },
@@ -195,7 +195,7 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
             ? [{
                 id: currentUserId,
                 name: currentUsername,
-                avatar: `http://127.0.0.1:5000/7.x/avataaars/svg?seed=${currentUserId}`,
+                avatar: `https://studysmarterapp.onrender.com/7.x/avataaars/svg?seed=${currentUserId}`,
                 role: "participant" as "participant",
                 status: "online" as "online",
               }]
@@ -222,7 +222,7 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
             id: "msg-1",
             userId: "host-1",
             userName: hostName,
-            userAvatar: "http://127.0.0.1:5000/7.x/avataaars/svg?seed=host1",
+            userAvatar: "https://studysmarterapp.onrender.com/7.x/avataaars/svg?seed=host1",
             content: "Welcome to the study room! Let's get started.",
             timestamp: new Date().toISOString(),
           },
@@ -510,7 +510,7 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
                           alert('Not logged in!');
                           return;
                         }
-                        const res = await fetch(`http://127.0.0.1:5000/api/study_rooms/${room.room_id}`, {
+                        const res = await fetch(`https://studysmarterapp.onrender.com/api/study_rooms/${room.room_id}`, {
                           method: 'DELETE',
                           headers: { Authorization: `Bearer ${token}` },
                         });

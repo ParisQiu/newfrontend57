@@ -30,7 +30,7 @@ export default function EditStudyRoomPage() {
       }
       try {
         const res = await fetch(
-          `http://127.0.0.1:5000/api/study_rooms/${roomId}`,
+          `https://studysmarterapp.onrender.com/api/study_rooms/${roomId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -77,7 +77,7 @@ export default function EditStudyRoomPage() {
     }
     try {
       const res = await fetch(
-        `http://127.0.0.1:5000/api/study_rooms/${roomId}`,
+        `https://studysmarterapp.onrender.com/api/study_rooms/${roomId}`,
         {
           method: "PUT",
           headers: {
