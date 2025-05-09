@@ -53,24 +53,44 @@ export default function UpcomingSchedule() {
 
         const rooms = Array.isArray(data) ? data : data.rooms || [];
         const roomMetadata = JSON.parse(localStorage.getItem('roomMetadata') || '{}');
-        const normalizedRooms = rooms.map((room: any) => {
-          const metadata = roomMetadata[room.room_id] || {};
+
+        // 新增 normalizeRoom 函数，防御式处理所有字段
+        function normalizeRoom(room: any) {
           return {
+            ...room,
+            date: room.date || "",
+            start_time: room.start_time || "00:00",
+            end_time: room.end_time || "00:00",
+            location: room.location || "",
+            mode: room.mode || "",
+          };
+        }
+        // 先 normalize 后再 merge metadata
+        const normalizedRooms = rooms.map((room: any) => {
+          const norm = normalizeRoom(room);
+          const metadata = roomMetadata[norm.room_id] || {};
+          return {
+            ...norm,
+            date: metadata.date || norm.date,
+            start_time: (metadata.start_time && /^\d{2}:\d{2}$/.test(metadata.start_time))
+              ? metadata.start_time
+              : ((norm.start_time && /^\d{2}:\d{2}$/.test(norm.start_time)) ? norm.start_time : "00:00"),
+            end_time: (metadata.end_time && /^\d{2}:\d{2}$/.test(metadata.end_time))
+              ? metadata.end_time
+              : ((norm.end_time && /^\d{2}:\d{2}$/.test(norm.end_time)) ? norm.end_time : "00:00"),
+            location: metadata.location || norm.location,
+            mode: metadata.mode || norm.mode,
             room_id: room.room_id || 0,
             id: room.id || `room-${room.room_id || Math.random().toString(36).substr(2, 9)}`,
             name: room.name || "Unnamed Room",
             subject: room.subject || "",
             capacity: room.capacity || 0,
             description: room.description || "No description available",
-            date: metadata.date || room.date || "",
-            startTime: metadata.startTime || room.startTime || room.start_time || "",
-            endTime: metadata.endTime || room.endTime || room.end_time || "",
             participants: Array.isArray(room.participants) ? room.participants : [],
-            location: metadata.location || room.location || "",
             host: room.host || "Anonymous",
-            mode: metadata.mode || room.mode || "hybrid",
             creator_id: room.creator_id || metadata.creator_id || "",
             creator: room.creator || null,
+            mode: metadata.mode || room.mode || "hybrid",
           };
         });
         // 展示全部房间，按日期升序和时间升序排序

@@ -191,16 +191,17 @@ export default function CreateStudyRoomForm() {
       // Use raw HH:mm for start_time and end_time per API spec
       // No ISO formatting needed
       // Format the data according to what the API expects using snake_case
+      // 确保所有字段都有默认值，不会传null或undefined给后端
       const requestData = {
-        name: formData.name,
-        capacity: Number(formData.capacity),
+        name: formData.name || "",
+        capacity: Number(formData.capacity) || 0,
         creator_id: creatorId,
-        description: formData.description,
-        date: formData.date,
-        start_time: formData.start_time,
-        end_time: formData.end_time,
-        location: formData.location,
-        mode: formData.mode,
+        description: formData.description || "",
+        date: formData.date || "",
+        start_time: formData.start_time || "00:00",
+        end_time: formData.end_time || "00:00",
+        location: formData.location || "",
+        mode: formData.mode || "hybrid",
       }
 
       // Detailed logging for debugging

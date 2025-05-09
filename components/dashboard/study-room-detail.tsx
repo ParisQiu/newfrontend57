@@ -158,16 +158,22 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
         throw new Error('API did not return JSON: ' + rawText.slice(0, 200));
       }
 
-      // Enforce time format check
+      // Enforce time format check only for non-empty values
       const hhmmRegex = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
       const startTime = extractTime(data.startTime || data.start_time);
       const endTime = extractTime(data.endTime || data.end_time);
-      if (!hhmmRegex.test(startTime) || !hhmmRegex.test(endTime)) {
-        const msg = `[Time format check] startTime: ${startTime}, endTime: ${endTime} do not match 'HH:mm' format!`;
-        console.error(msg);
-        setError(msg);
-        throw new Error('API did not return JSON: ' + rawText.slice(0, 200));
+      
+      // 只对非空字符串进行格式校验
+      if (startTime && !hhmmRegex.test(startTime)) {
+        console.error(`[Time format check] startTime: ${startTime} does not match 'HH:mm' format!`);
       }
+      if (endTime && !hhmmRegex.test(endTime)) {
+        console.error(`[Time format check] endTime: ${endTime} does not match 'HH:mm' format!`);
+      }
+      
+      // 为空或格式不对时赋默认值
+      data.startTime = startTime && hhmmRegex.test(startTime) ? startTime : "00:00";
+      data.endTime = endTime && hhmmRegex.test(endTime) ? endTime : "00:00";
 
       // mockRoom 逻辑和 setRoom、setIsJoined
       const description = data.description || "No description available";
@@ -176,7 +182,7 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
       const joinedRoomsRaw = localStorage.getItem("joinedStudyRooms");
       const joinedRoomsArr = JSON.parse(joinedRoomsRaw || "[]");
       const userHasJoined = Array.isArray(joinedRoomsArr) && joinedRoomsArr.some(
-        (jr) => jr.roomId.toString() === data.room_id.toString()
+        (jr) => jr && jr.roomId != null && data.room_id != null && jr.roomId.toString() === data.room_id.toString()
       );
       const hostName = (data.creator && data.creator.username) ? data.creator.username : "Host";
       const currentUserId = String(localStorage.getItem("userId") || "user-1");
@@ -268,7 +274,7 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
 
       // Add the current user to the participants list
       const updatedParticipants: StudyRoomParticipant[] = [
-        ...room.participants.map((p) => ({
+        ...(room?.participants || []).map((p) => ({
           ...p,
           role: p.role === "host" ? "host" : "participant",
         })) as StudyRoomParticipant[],
@@ -332,7 +338,7 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
       const userId = localStorage.getItem("userId") || "current-user"
 
       // Remove the current user from the participants list
-      const updatedParticipants = room.participants.filter((p) => p.id !== userId)
+      const updatedParticipants = (room?.participants || []).filter((p) => p.id !== userId)
 
       // Update the room state
       setRoom({
@@ -391,7 +397,7 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
       // Update the room state
       setRoom({
         ...room,
-        messages: [...room.messages, newMessageObj],
+        messages: [...(room?.messages || []), newMessageObj],
       })
 
       // Clear the input
@@ -468,7 +474,7 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{room.name}</h1>
             <div className="mt-2 flex flex-wrap gap-2">
-              {room.tags.map((tag, index) => (
+              {(room?.tags || []).map((tag, index) => (
                 <span
                   key={index}
                   className="inline-flex items-center rounded-full bg-blue-100 px-3 py-0.5 text-sm font-medium text-blue-800"
@@ -566,7 +572,7 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
             <div>
               <p className="text-xs text-gray-500">Capacity</p>
               <p className="text-sm font-medium">
-                {room.participants.length}/{room.capacity} participants
+                {(room?.participants || []).length}/{room.capacity} participants
               </p>
             </div>
           </div>
@@ -588,7 +594,7 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
       <div className="rounded-lg border bg-white p-6 shadow-sm">
         <h2 className="mb-4 text-lg font-semibold">Participants</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {room.participants.map((participant, idx) => (
+          {(room?.participants || []).map((participant, idx) => (
             <div key={participant.id} className="flex items-center rounded-md border p-3">
               <div className="relative mr-3">
                 <div className="group relative">
@@ -615,7 +621,7 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
                           if (!file) return;
                           const reader = new FileReader();
                           reader.onload = ev => {
-                            const updated = [...room.participants];
+                            const updated = [...(room?.participants || [])];
                             const newAvatar = ev.target?.result as string;
                             updated[idx] = { ...participant, avatar: newAvatar };
                             setRoom({ ...room, participants: updated });
@@ -668,7 +674,7 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
                     value={participant.status}
                     onChange={(e) => {
                       const newStatus = e.target.value as "online" | "away" | "offline"
-                      const updated = [...room.participants]
+                      const updated = [...(room?.participants || [])]
                       updated[idx] = { ...participant, status: newStatus }
                       setRoom({ ...room, participants: updated })
                       // Persist status change
@@ -720,13 +726,13 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
           {activeTab === "chat" ? (
             <div className="flex h-96 flex-col">
               <div className="flex-1 overflow-y-auto">
-                {room.messages.length === 0 ? (
+                {(room?.messages || []).length === 0 ? (
                   <div className="flex h-full items-center justify-center">
                     <p className="text-center text-gray-500">No messages yet. Start the conversation!</p>
                   </div>
                 ) : (
                   <div className="space-y-4 p-2">
-                    {room.messages.map((message) => (
+                    {(room?.messages || []).map((message) => (
                       <div key={message.id} className="flex">
                         <img
                           src={message.userAvatar || "/blueportrait.jpg"}
@@ -785,13 +791,13 @@ export default function StudyRoomDetail({ roomId }: StudyRoomDetailProps) {
                 )}
               </div>
 
-              {room.materials.length === 0 ? (
+              {(room?.materials || []).length === 0 ? (
                 <div className="flex h-64 items-center justify-center">
                   <p className="text-center text-gray-500">No study materials have been shared yet.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {room.materials.map((material) => (
+                  {(room?.materials || []).map((material) => (
                     <div key={material.id} className="flex items-center justify-between rounded-md border p-3">
                       <div className="flex items-center">
                         <div className="mr-3 flex h-10 w-10 items-center justify-center rounded bg-blue-100 text-blue-600">

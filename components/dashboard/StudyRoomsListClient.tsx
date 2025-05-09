@@ -27,7 +27,7 @@ export default function StudyRoomsListClient({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
-  const [joinedRooms, setJoinedRooms] = useState([]);
+  const [joinedRooms, setJoinedRooms] = useState<StudyRoom[]>([]);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -81,22 +81,33 @@ export default function StudyRoomsListClient({
           })
         );
         console.log('Final merged rooms:', detailedRooms);
-        // 保证每个房间都带有 creator 字段
+        // 保证每个房间都带有完整的字段
         const normalizedRooms = detailedRooms.map(room => ({
           ...room,
           creator: room.creator || null, // 保证 creator 字段存在
-          startTime: room.startTime || room.start_time || '',
-          endTime: room.endTime || room.end_time || '',
+          startTime: room.startTime || room.start_time || '00:00',
+          endTime: room.endTime || room.end_time || '00:00',
+          date: room.date || '',
+          location: room.location || '',
+          mode: room.mode || '',
+          capacity: room.capacity || 0,
+          description: room.description || '',
+          participants: room.participants || [],
+          tags: room.tags || [],
         }));
         setRooms(normalizedRooms);
         setLoading(false);
-      } catch (err) {
+      } catch (err: any) {
         setError(err.message);
         setLoading(false);
       }
     };
     fetchStudyRooms();
   }, []);
+
+  const filterByTags = (room: StudyRoom, tags: string[]) => {
+    return tags.every((j: string) => (room.tags || []).some((id: string) => id.toLowerCase().includes(j.toLowerCase())));
+  };
 
   if (showAll) {
     const displayedRooms = rooms.slice(0, 3);
@@ -109,15 +120,15 @@ export default function StudyRoomsListClient({
         ) : (
           <div className="space-y-3">
             {displayedRooms.map(room => {
-  console.log('当前渲染 room:', room);
-  console.log('当前渲染 room.creator:', room.creator);
+              console.log('当前渲染 room:', room);
+              console.log('当前渲染 room.creator:', room.creator);
               let joinedRoomIds = [];
-              try { joinedRoomIds = (JSON.parse(localStorage.getItem('joinedStudyRooms')) || []).map(j => String(j.roomId)); } catch {}
+              try { joinedRoomIds = (JSON.parse(localStorage.getItem('joinedStudyRooms') || '[]') || []).map((j: any) => String(j.roomId)); } catch {}
               // Determine owner by matching username & email
               const isOwner = currentUser && room.creator &&
                 currentUser.username === room.creator.username &&
                 currentUser.email === room.creator.email;
-              const isJoined = joinedRoomIds.includes(String(room.room_id));
+              const isJoined = joinedRoomIds.includes(String(room.room_id || ''));
               return (
                 <div key={room.room_id} className="rounded-md border p-3 hover:bg-gray-50">
                   <div className="flex items-center justify-between">
@@ -153,7 +164,7 @@ export default function StudyRoomsListClient({
                                 });
                                 if (!res.ok) throw new Error('Failed to delete room');
                                 window.location.reload();
-                              } catch (err) {
+                              } catch (err: any) {
                                 alert('Delete failed: ' + err.message);
                               }
                             }
@@ -276,7 +287,7 @@ export default function StudyRoomsListClient({
                                   if (!res.ok) throw new Error('Failed to delete room');
                                   // Refresh the room list after deletion
                                   window.location.reload();
-                                } catch (err) {
+                                } catch (err: any) {
                                   alert('Delete failed: ' + err.message);
                                 }
                               }
@@ -358,10 +369,10 @@ export default function StudyRoomsListClient({
                               try {
                                 joinedRoomIds = JSON.parse(localStorage.getItem('joinedStudyRooms')) || [];
                               } catch {}
-                              const updated = joinedRoomIds.filter(j => String(j.roomId) !== String(room.room_id));
+                              const updated = joinedRoomIds.filter((j: any) => String(j.roomId) !== String(room.room_id || ''));
                               localStorage.setItem('joinedStudyRooms', JSON.stringify(updated));
                               window.location.reload();
-                            } catch (err) {
+                            } catch (err: any) {
                               alert('Leave failed: ' + err.message);
                             }
                           }
